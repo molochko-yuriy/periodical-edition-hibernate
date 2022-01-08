@@ -2,11 +2,11 @@ INSERT INTO user_role (id, role_name)
 VALUES (1, 'admin'),
        (2, 'user');
 
-INSERT INTO users (id, last_name, first_name, login, password, email, mobile_phone, balance)
-VALUES (1, 'Степанов', 'Александр', 'stepanow.a@mail.ru', '1111', 'stepanow.a@mail.ru', '8684758965', 235),
-       (2, 'Александров', 'Виктор', 'alecsandrow.a@mail.ru', '2222', 'alecsandrow.a@mail.ru', '985214', 25),
-       (3, 'Степанов', 'Степан', 'stepan.a@mail.ru', '3333', 'stepan.a@mail.ru', '9522585', 235),
-       (4, 'Александров', 'Андрей', 'alecsandr.a@mail.ru', '4444', 'alecsandr.a@mail.ru', '7892152', 25);
+INSERT INTO users (last_name, first_name, login, password, email, mobile_phone, balance)
+VALUES ('Степанов', 'Александр', 'stepanow.a@mail.ru', '1111', 'stepanow.a@mail.ru', '8684758965', 235),
+       ('Александров', 'Виктор', 'alecsandrow.a@mail.ru', '2222', 'alecsandrow.a@mail.ru', '985214', 25),
+       ('Степанов', 'Степан', 'stepan.a@mail.ru', '3333', 'stepan.a@mail.ru', '9522585', 235),
+       ('Александров', 'Андрей', 'alecsandr.a@mail.ru', '4444', 'alecsandr.a@mail.ru', '7892152', 25);
 
 INSERT INTO USER_ROLE_LINK (user_id, role_id)
 VALUES (1, 1),
