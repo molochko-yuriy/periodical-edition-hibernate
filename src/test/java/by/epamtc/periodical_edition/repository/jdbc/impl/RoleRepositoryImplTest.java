@@ -1,9 +1,10 @@
-package by.epamtc.periodical_edition.repository.impl;
+package by.epamtc.periodical_edition.repository.jdbc.impl;
 
 import by.epamtc.periodical_edition.entity.Role;
 
+import by.epamtc.periodical_edition.exception.RepositoryException;
 import by.epamtc.periodical_edition.repository.BaseRepositoryTest;
-import by.epamtc.periodical_edition.repository.RoleRepository;
+import by.epamtc.periodical_edition.repository.impl.RoleRepositoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,18 +14,20 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class RoleRepositoryImplTest extends BaseRepositoryTest {
-    private final RoleRepository roleRepository;
+    private final RoleRepositoryImpl roleRepository;
+//    private final BaseRepository<Role> roleRepository;
     private final List<Role> roles;
 
     public RoleRepositoryImplTest() {
+        roleRepository = new RoleRepositoryImpl();
         roles = new ArrayList<>();
-        roleRepository = new RoleRepositoryImpl(getConnectionPool());
+
         roles.add(new Role(1L, "admin"));
         roles.add(new Role(2L, "user"));
     }
 
     @Test
-    public void findById_validData_shouldReturnRole() {
+    public void findById_validData_shouldReturnRole() throws RepositoryException {
         // given
         Role expected = roles.get(0);
 
@@ -36,7 +39,7 @@ public class RoleRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void findAll_validData_shouldReturnRoles() {
+    public void findAll_validData_shouldReturnRoles() throws RepositoryException {
         //given && when
         final List<Role> actual = roleRepository.findAll();
 
@@ -45,7 +48,7 @@ public class RoleRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void add_validDate_shouldAddNewRole() {
+    public void add_validDate_shouldAddNewRole() throws RepositoryException {
         //given
         Role expected = new Role(3L, "rider");
         Role actual = new Role(null, "rider");
@@ -60,7 +63,7 @@ public class RoleRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void update_validData_shouldUpdateRole() {
+    public void update_validData_shouldUpdateRole() throws RepositoryException {
         //given
         Role expected = new Role(2L, "rider");
         Role actual = roleRepository.findById(2L);
@@ -77,7 +80,7 @@ public class RoleRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void delete_validData_shouldDeleteSubscription() {
+    public void delete_validData_shouldDeleteSubscription() throws RepositoryException {
         //given
         Role expected = roles.get(0);
         Role actual = roleRepository.findById(1L);
@@ -92,16 +95,16 @@ public class RoleRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void addRoleToUserById_validData_shouldAddRoleToUserById() {
+    public void addRoleToUserById_validData_shouldAddRoleToUserById() throws RepositoryException {
         //given
-        assertEquals(1, roleRepository.findRolesByUserId(2L).size());
+        Assert.assertEquals(1, roleRepository.findRolesByUserId(2L).size());
 
         //when
         boolean isAdded = roleRepository.addRoleToUser(2L, 1L);
 
-        //then
+//        //then
         Assert.assertTrue(isAdded);
-        assertEquals(2, roleRepository.findRolesByUserId(2L).size());
+        Assert.assertEquals(2, roleRepository.findRolesByUserId(2L).size());
     }
 
     @Test

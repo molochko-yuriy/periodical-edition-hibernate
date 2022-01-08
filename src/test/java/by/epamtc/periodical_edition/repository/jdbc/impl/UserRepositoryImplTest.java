@@ -1,7 +1,11 @@
-package by.epamtc.periodical_edition.repository.impl;
+package by.epamtc.periodical_edition.repository.jdbc.impl;
 
 import by.epamtc.periodical_edition.entity.User;
+import by.epamtc.periodical_edition.exception.RepositoryException;
 import by.epamtc.periodical_edition.repository.*;
+import by.epamtc.periodical_edition.repository.impl.RoleRepositoryImpl;
+import by.epamtc.periodical_edition.repository.impl.SubscriptionRepositoryImpl;
+import by.epamtc.periodical_edition.repository.impl.UserRepositoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -9,16 +13,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepositoryImplTest extends BaseRepositoryTest {
-    private final BaseRepository<User> userRepository;
+    private final UserRepositoryImpl userRepository;
     private final List<User> users;
-    private final SubscriptionRepository subscriptionRepository;
-    private final RoleRepository roleRepository;
+    private final SubscriptionRepositoryImpl subscriptionRepository;
+    private final RoleRepositoryImpl roleRepository;
 
     public UserRepositoryImplTest() {
         users = new ArrayList<>();
-        userRepository = new UserRepositoryImpl(getConnectionPool());
-        subscriptionRepository = new SubscriptionRepositoryImpl(getConnectionPool());
-        roleRepository = new RoleRepositoryImpl(getConnectionPool());
+        userRepository = new UserRepositoryImpl();
+        subscriptionRepository = new SubscriptionRepositoryImpl();
+        roleRepository = new RoleRepositoryImpl();
         users.add(new User(1L, "Степанов", "Александр", "stepanow.a@mail.ru", "1111",
                 "8684758965", "stepanow.a@mail.ru", 235));
         users.add(new User(2L, "Александров", "Виктор", "alecsandrow.a@mail.ru", "2222",
@@ -30,7 +34,7 @@ public class UserRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void findById_validData_shouldReturnUser() {
+    public void findById_validData_shouldReturnUser() throws RepositoryException {
         //given
         User expected = users.get(0);
 
@@ -42,7 +46,7 @@ public class UserRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void findAll_validData_shouldReturnExistUsers() {
+    public void findAll_validData_shouldReturnExistUsers() throws RepositoryException {
         //given && when
         final List<User> actual = userRepository.findAll();
 
@@ -52,10 +56,12 @@ public class UserRepositoryImplTest extends BaseRepositoryTest {
 
 
     @Test
-    public void add_validData_shouldAddNewUser() {
+    public void add_validData_shouldAddNewUser() throws RepositoryException {
         //given
-        User expected = new User(5L, "Oleg", "Petrov", "rider", "580236", "+375295899663", "oleg.p@mail.ru", 85);
-        User actual = new User(null, "Oleg", "Petrov", "rider", "580236", "+375295899663", "oleg.p@mail.ru", 85);
+        User expected = new User(5L, "Oleg", "Petrov", "rider", "580236",
+                "+375295899663", "oleg.p@mail.ru", 85);
+        User actual = new User( null, "Oleg", "Petrov", "rider", "580236",
+                "+375295899663", "oleg.p@mail.ru", 85);
 
         // when
         boolean isAdded = userRepository.add(actual);
@@ -67,9 +73,9 @@ public class UserRepositoryImplTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void update_validData_shouldUpdateUser() {
+    public void update_validData_shouldUpdateUser() throws RepositoryException {
         //given
-        User expected = new User(2L, "Petrov", "Oleg", "rider", "158963", "+375291548544", "petrov.a@mail.ru", 85);
+        User expected = User.builder().id(2L).lastName("Petrov").firstName("Oleg").login("rider").password("158963").mobilePhone("+375291548544").email("petrov.a@mail.ru").balance(85).build();
         User actual = userRepository.findById(2L);
         Assert.assertEquals(users.get(1), actual);
 
@@ -87,12 +93,12 @@ public class UserRepositoryImplTest extends BaseRepositoryTest {
         //then
         Assert.assertTrue(isUpdated);
         Assert.assertEquals(expected, actual);
-        Assert.assertEquals(expected, userRepository.findById(actual.getId()));
+        Assert.assertEquals(actual, userRepository.findById(actual.getId()));
     }
 
 
     @Test
-    public void delete_validData_shouldDeleteUser() {
+    public void delete_validData_shouldDeleteUser() throws RepositoryException {
         //given
         User expected = users.get(0);
         User actual = userRepository.findById(1L);
