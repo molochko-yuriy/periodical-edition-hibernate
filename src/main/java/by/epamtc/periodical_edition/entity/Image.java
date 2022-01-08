@@ -1,31 +1,29 @@
 package by.epamtc.periodical_edition.entity;
 
+import lombok.*;
+
+import javax.persistence.*;
+
+@NoArgsConstructor
+@Getter
+@Setter
+@ToString(callSuper=true)
+@Entity
+@Table(name = "periodical_edition_image")
 public class Image extends BaseEntity<Long> {
-    private Long periodicalEditionId;
+
+    @Column(name = "image_path")
     private String imagePath;
 
-    public Image() {}
+    @ManyToOne
+    @JoinColumn(name = "periodical_edition_id")
+    private PeriodicalEdition periodicalEdition;
 
-    public Image(Long id, Long periodicalEditionId, String imagePath) {
+    @Builder
+    public Image(Long id, PeriodicalEdition periodicalEdition, String imagePath) {
         super.setId(id);
-        this.periodicalEditionId = periodicalEditionId;
         this.imagePath = imagePath;
-    }
-
-    public Long getPeriodicalEditionId() {
-        return periodicalEditionId;
-    }
-
-    public void setPeriodicalEditionId(Long periodicalEditionId) {
-        this.periodicalEditionId = periodicalEditionId;
-    }
-
-    public String getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
+        this.periodicalEdition = periodicalEdition;
     }
 
     @Override
@@ -39,12 +37,8 @@ public class Image extends BaseEntity<Long> {
         } else if (!getId().equals(aThat.getId())) {return false;}
 
         if (getImagePath() == null) {
-            if (aThat.getImagePath() != null) {return false;}
-        } else if (!getImagePath().equals(aThat.getImagePath())) {return false;}
-
-        if (getPeriodicalEditionId() == null) {
-            return aThat.getPeriodicalEditionId() == null;
-        } else return getPeriodicalEditionId().equals(aThat.getPeriodicalEditionId());
+            return aThat.getImagePath() == null;
+        } else return getImagePath().equals(aThat.getImagePath());
     }
 
     @Override
@@ -53,16 +47,6 @@ public class Image extends BaseEntity<Long> {
         int result = 1;
         result = prime * result + (getImagePath() != null ? getImagePath().hashCode() : 0);
         result = prime * result + (getId() != null ? getId().hashCode() : 0);
-        result = prime * result + (getPeriodicalEditionId() != null ? getPeriodicalEditionId().hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "id=" + getId() +
-                ", periodicalEditionId=" + getPeriodicalEditionId() +
-                ", imagePath='" + getImagePath() + '\'' +
-                '}';
     }
 }

@@ -1,19 +1,34 @@
 package by.epamtc.periodical_edition.entity;
 
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = "review")
 public class Review extends BaseEntity<Long> {
+    @Column(name = "user_comment")
     private String userComment;
+
+    @Column(name = "rating")
     private int rating;
-    private Long userId;
-    private Long periodicalEditionId;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "periodical_edition_id")
+    private PeriodicalEdition periodicalEdition;
+
 
     public Review() {}
 
-    public Review(Long id, String userComment, int rating, Long userId, Long periodicalEditionId) {
+    public Review(Long id, String userComment, int rating, User user, PeriodicalEdition periodicalEdition) {
         super.setId(id);
         this.userComment = userComment;
         this.rating = rating;
-        this.userId = userId;
-        this.periodicalEditionId = periodicalEditionId;
+        this.user = user;
+        this.periodicalEdition = periodicalEdition;
     }
 
     public String getUserComment() {
@@ -32,22 +47,6 @@ public class Review extends BaseEntity<Long> {
         this.rating = rating;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getPeriodicalEditionId() {
-        return periodicalEditionId;
-    }
-
-    public void setPeriodicalEditionId(Long periodicalEditionId) {
-        this.periodicalEditionId = periodicalEditionId;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -62,17 +61,9 @@ public class Review extends BaseEntity<Long> {
             if (aThat.getId()  != null) { return false;}
         } else if (!getId().equals(aThat.getId())) { return false;}
 
-        if (getUserId() == null) {
-            if (aThat.getUserId()  != null) { return false;}
-        } else if (!getUserId().equals(aThat.getUserId())) { return false;}
-
         if (getUserComment() == null) {
             if (aThat.getUserComment()  != null) { return false;}
         } else if (!getUserComment().equals(aThat.getUserComment())) { return false;}
-
-        if (getPeriodicalEditionId() == null) {
-            if (aThat.getPeriodicalEditionId()  != null) { return false;}
-        } else if (!getPeriodicalEditionId().equals(aThat.getPeriodicalEditionId())) { return false;}
 
         return getRating() == aThat.getRating();
     }
@@ -82,9 +73,7 @@ public class Review extends BaseEntity<Long> {
         int prime = 31;
         int result = 1;
         result = prime * result + (getUserComment() != null ? getUserComment().hashCode() : 0);
-        result = prime * result + (getUserId() != null ? getUserId().hashCode() : 0);
         result = prime * result + (getId() != null ? getId().hashCode() : 0);
-        result = prime * result + (getPeriodicalEditionId() != null ? getPeriodicalEditionId().hashCode() : 0);
         result = prime * result + getRating();
         return result;
     }
@@ -95,8 +84,6 @@ public class Review extends BaseEntity<Long> {
                 "id=" + getId() +
                 ", userComment='" + getUserComment() + '\'' +
                 ", rating=" + getRating() +
-                ", userId=" + getUserId() +
-                ", periodicalEditionId=" + getPeriodicalEditionId() +
                 '}';
     }
 }

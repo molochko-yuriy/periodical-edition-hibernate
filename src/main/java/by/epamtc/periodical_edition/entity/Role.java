@@ -1,20 +1,30 @@
 package by.epamtc.periodical_edition.entity;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@NoArgsConstructor
+@Getter
+@Setter
+@ToString(callSuper=true)
+@Entity
+@Table(name = "user_role")
 public class Role extends BaseEntity<Long>{
+    @Column(name = "role_name")
     private String roleName;
 
-    public Role () {}
+    @ManyToMany(mappedBy = "roles")
+    @ToString.Exclude
+    private List<User> users = new ArrayList<>();
 
     public Role(Long id, String roleName) {
         super.setId(id);
-        this.roleName = roleName;
-    }
-
-    public String getRoleName() {
-        return roleName;
-    }
-
-    public void setRoleName(String roleName) {
         this.roleName = roleName;
     }
 
@@ -44,13 +54,5 @@ public class Role extends BaseEntity<Long>{
         result = prime * result + (getId() != null ? getId().hashCode() : 0);
         result = prime * result + (getRoleName() != null ? getRoleName().hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "id=" + getId() +
-                ", roleName='" + getRoleName() + '\'' +
-                '}';
     }
 }

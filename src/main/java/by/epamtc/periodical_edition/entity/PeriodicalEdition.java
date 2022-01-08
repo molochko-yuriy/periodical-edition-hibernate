@@ -2,16 +2,48 @@ package by.epamtc.periodical_edition.entity;
 
 import by.epamtc.periodical_edition.enums.PeriodicalEditionType;
 import by.epamtc.periodical_edition.enums.Periodicity;
+import lombok.*;
 
+import javax.persistence.*;
+import java.util.List;
+
+@NoArgsConstructor
+@Getter
+@Setter
+@ToString(callSuper=true)
+@Entity
+@Table(name = "periodical_edition")
 public class PeriodicalEdition extends BaseEntity<Long> {
+    @Column(name = "price")
     private int price;
+
+    @Column(name = "periodical_edition_description")
     private String description;
+
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "periodical_edition_type")
+    @Enumerated(EnumType.STRING)
     private PeriodicalEditionType periodicalEditionType;
+
+    @Column(name = "periodicity")
+    @Enumerated(EnumType.STRING)
     private Periodicity periodicity;
 
-    public PeriodicalEdition() {}
+    @OneToMany(mappedBy = "periodicalEdition")
+    @ToString.Exclude
+    private List<Review> reviews;
 
+    @OneToMany(mappedBy = "periodicalEdition")
+    @ToString.Exclude
+    private List<Image> images;
+
+    @OneToMany(mappedBy = "periodicalEdition")
+    @ToString.Exclude
+    private List<Content> contents;
+
+    @Builder
     public PeriodicalEdition(Long id, int price, String description, String title,
                              PeriodicalEditionType periodicalEditionType, Periodicity periodicity) {
         super.setId(id);
@@ -103,17 +135,5 @@ public class PeriodicalEdition extends BaseEntity<Long> {
         result = prime * result + (getPeriodicity() != null ? getPeriodicity().hashCode() : 0);
         result = prime * result + getPrice();
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "id=" + getId() +
-                ", price=" + getPrice() +
-                ", description='" + getDescription() + '\'' +
-                ", title='" + getTitle() + '\'' +
-                ", periodicalEditionType=" + getPeriodicalEditionType() +
-                ", periodicity=" + getPeriodicity() +
-                '}';
     }
 }

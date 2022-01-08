@@ -1,24 +1,41 @@
 package by.epamtc.periodical_edition.entity;
 
+import lombok.Builder;
+
+import javax.persistence.*;
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "content")
 public class Content extends BaseEntity<Long> {
+    @Column(name = "start_date")
     private LocalDate startDate;
+
+    @Column(name = "expiration_date")
     private LocalDate expirationDate;
+
+    @Column(name = "price")
     private int price;
-    private Long subscriptionId;
-    private Long periodicalEditionId;
+
+    @ManyToOne
+    @JoinColumn(name = "subscription_id")
+    private Subscription subscription;
+
+    @ManyToOne
+    @JoinColumn(name = "periodical_edition_id")
+    private PeriodicalEdition periodicalEdition;
 
     public Content() {}
 
+    @Builder
     public Content(Long id, LocalDate startDate, LocalDate expirationDate, int price,
-                   Long subscriptionId, Long periodicalEditionId) {
+                   Subscription subscription, PeriodicalEdition periodicalEdition) {
         super.setId(id);
         this.startDate = startDate;
         this.expirationDate = expirationDate;
         this.price = price;
-        this.subscriptionId = subscriptionId;
-        this.periodicalEditionId = periodicalEditionId;
+        this.subscription = subscription;
+        this.periodicalEdition = periodicalEdition;
     }
 
     public LocalDate getStartDate() {
@@ -45,22 +62,6 @@ public class Content extends BaseEntity<Long> {
         this.price = price;
     }
 
-    public Long getSubscriptionId() {
-        return subscriptionId;
-    }
-
-    public void setSubscriptionId(Long subscriptionId) {
-        this.subscriptionId = subscriptionId;
-    }
-
-    public Long getPeriodicalEditionId() {
-        return periodicalEditionId;
-    }
-
-    public void setPeriodicalEditionId(Long periodicalEditionId) {
-        this.periodicalEditionId = periodicalEditionId;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {return true;}
@@ -71,10 +72,6 @@ public class Content extends BaseEntity<Long> {
             if (aThat.getId() != null) { return false;}
         } else if (!getId().equals(aThat.getId())) { return false;}
 
-        if (getPeriodicalEditionId() == null) {
-            if (aThat.getPeriodicalEditionId() != null) { return false;}
-        } else if (!getPeriodicalEditionId().equals(aThat.getPeriodicalEditionId())) { return false;}
-
         if (getStartDate() == null) {
             if (aThat.getStartDate() != null) { return false;}
         } else if (!getStartDate().equals(aThat.getStartDate())) { return false;}
@@ -82,10 +79,6 @@ public class Content extends BaseEntity<Long> {
         if (getExpirationDate() == null) {
             if (aThat.getExpirationDate() != null) { return false;}
         } else if (!getExpirationDate().equals(aThat.getExpirationDate())) { return false;}
-
-        if (getSubscriptionId() == null) {
-            if (aThat.getSubscriptionId() != null) { return false;}
-        } else if (!getSubscriptionId().equals(aThat.getSubscriptionId())) { return false;}
 
         return getPrice() == aThat.getPrice();
     }
@@ -97,8 +90,6 @@ public class Content extends BaseEntity<Long> {
         result = prime * result + (getId() != null ? getId().hashCode() : 0);
         result = prime * result + (getStartDate() != null ? getStartDate().hashCode() : 0);
         result = prime * result + (getExpirationDate() != null ? getExpirationDate().hashCode() : 0);
-        result = prime * result + (getSubscriptionId() != null ? getSubscriptionId().hashCode() : 0);
-        result = prime * result + (getPeriodicalEditionId() != null ? getPeriodicalEditionId().hashCode() : 0);
         result = prime * result + getPrice();
         return result;
     }
@@ -110,8 +101,6 @@ public class Content extends BaseEntity<Long> {
                 ", startDate=" + getStartDate() +
                 ", expirationDate=" + getExpirationDate() +
                 ", price=" + getPrice() +
-                ", subscriptionId=" + getSubscriptionId() +
-                ", periodicalEditionId=" + getPeriodicalEditionId() +
                 '}';
     }
 }

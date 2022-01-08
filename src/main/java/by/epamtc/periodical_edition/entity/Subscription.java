@@ -1,43 +1,40 @@
 package by.epamtc.periodical_edition.entity;
 
 import by.epamtc.periodical_edition.enums.PaymentStatus;
+import lombok.*;
 
+import javax.persistence.*;
+import java.util.List;
+
+@NoArgsConstructor
+@Getter
+@Setter
+@ToString(callSuper=true)
+@Entity
+@Table(name = "subscription")
 public class Subscription extends BaseEntity<Long> {
+    @Column(name = "price")
     private int price;
-    private Long userId;
+
+    @Column(name = "payment_status")
+    @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
 
-    public  Subscription() {}
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    public Subscription(Long id, int price, Long userId, PaymentStatus paymentStatus) {
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL)
+    private List<Content> contents;
+
+    @Builder
+    public Subscription(Long id, int price, PaymentStatus paymentStatus, User user) {
         super.setId(id);
         this.price = price;
-        this.userId = userId;
         this.paymentStatus = paymentStatus;
-    }
-
-    public int getPrice() {
-        return price;
-    }
-
-    public void setPrice(int price) {
-        this.price = price;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public PaymentStatus getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(PaymentStatus paymentStatus) {
-        this.paymentStatus = paymentStatus;
+        this.user = user;
     }
 
     @Override
@@ -54,10 +51,6 @@ public class Subscription extends BaseEntity<Long> {
             if (aThat.getId()  != null) { return false;}
         } else if (!getId().equals(aThat.getId())) { return false;}
 
-        if (getUserId() == null) {
-            if (aThat.getUserId()  != null) { return false;}
-        } else if (!getUserId().equals(aThat.getUserId())) { return false;}
-
         if (getPaymentStatus() == null) {
             if (aThat.getPaymentStatus()  != null) { return false;}
         } else if (!getPaymentStatus().equals(aThat.getPaymentStatus())) { return false;}
@@ -70,19 +63,8 @@ public class Subscription extends BaseEntity<Long> {
         int prime = 31;
         int result = 1;
         result = prime * result + (getId() != null ? getId().hashCode() : 0);
-        result = prime * result + (getUserId() != null ? getUserId().hashCode() : 0);
         result = prime * result + (getPaymentStatus() != null ? getPaymentStatus().hashCode() : 0);
         result = prime * result + getPrice();
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "id=" + getId() +
-                ", price=" + getPrice() +
-                ", paymentStatus=" + getPaymentStatus() +
-                ", userId=" + getUserId() +
-                '}';
     }
 }
