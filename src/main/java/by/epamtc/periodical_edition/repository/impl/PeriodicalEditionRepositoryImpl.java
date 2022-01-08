@@ -1,134 +1,140 @@
 package by.epamtc.periodical_edition.repository.impl;
 
-import by.epamtc.periodical_edition.entity.PeriodicalEdition;
-import by.epamtc.periodical_edition.enums.PeriodicalEditionType;
-import by.epamtc.periodical_edition.enums.Periodicity;
+import by.epamtc.periodical_edition.entity.*;
+import by.epamtc.periodical_edition.exception.RepositoryException;
+import by.epamtc.periodical_edition.repository.BaseRepository;
 import by.epamtc.periodical_edition.repository.PeriodicalEditionRepository;
+import by.epamtc.periodical_edition.util.HibernateUtil;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PeriodicalEditionRepositoryImpl extends AbstractRepositoryImpl<PeriodicalEdition> implements PeriodicalEditionRepository {
-    private static final String PERIODICAL_EDITION_TYPE_COLUMN = "periodical_edition_type";
+public class PeriodicalEditionRepositoryImpl implements BaseRepository<PeriodicalEdition>, PeriodicalEditionRepository {
+    private static final String ID_COLUMN = "id";
     private static final String PRICE_COLUMN = "price";
-    private static final String PERIODICITY_COLUMN = "periodicity";
-    private static final String PERIODICAL_EDITION_DESCRIPTION_COLUMN = "periodical_edition_description";
+    private static final String DESCRIPTION_COLUMN = "description";
     private static final String TITLE_COLUMN = "title";
+    private static final String PERIODICAL_EDITION_TYPE_COLUMN = "periodicalEditionType";
+    private static final String PERIODICITY_COLUMN = "periodicity";
 
-    private static final String SELECT_BY_ID_QUERY = "SELECT * FROM periodical_edition WHERE id = ?";
-    private static final String SELECT_ALL_QUERY = "SELECT * FROM periodical_edition";
-    private static final String INSERT_QUERY = "INSERT INTO periodical_edition (" +
-            "periodical_edition_type, price, periodicity, periodical_edition_description, title ) VALUES (?,?,?,?,?)";
-    private static final String UPDATE_QUERY = "UPDATE periodical_edition SET periodical_edition_type = ?, price = ?, " +
-            "periodicity = ?, periodical_edition_description = ?, title = ? WHERE id = %d";
-    private static final String DELETE_QUERY = "DELETE FROM periodical_edition WHERE id = ?";
+    private static final String SELECT_ALL_QUERY = " from PeriodicalEdition ";
+    private static final String UPDATE_QUERY = ""
+            + " update PeriodicalEdition set "
+            + " price = :price, title = :title, description = :description, "
+            + "periodicalEditionType = :periodicalEditionType, periodicity = :periodicity"
+            + " where id = :id";
 
-    private static final String DELETE_LINK_FROM_REVIEW_QUERY = "DELETE FROM review WHERE periodical_edition_id = ?";
-    private static final String DELETE_LINK_FROM_IMAGE_QUERY = "DELETE FROM periodical_edition_image WHERE periodical_edition_id = ?";
-    private static final String DELETE_LINK_FROM_CONTENT_QUERY = "DELETE FROM content WHERE periodical_edition_id = ?";
+    private final SessionFactory sessionFactory;
 
-    private static final String SELECT_PERIODICAL_EDITION_BY_SUBSCRIPTION_ID = "SELECT * FROM periodical_edition pe LEFT JOIN " +
-            "content c ON pe.id = c.periodical_edition_id  WHERE SUBSCRIPTION_ID= ?";
-
-    public PeriodicalEditionRepositoryImpl(DataSource dataSource) {
-        super(dataSource);
+    public PeriodicalEditionRepositoryImpl() {
+        this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
     @Override
-    protected String defineSelectByIdQuery() {
-        return SELECT_BY_ID_QUERY;
-    }
-
-    @Override
-    protected String defineSelectAllQuery() {
-        return SELECT_ALL_QUERY;
-    }
-
-    @Override
-    protected String defineInsertQuery() {
-        return INSERT_QUERY;
-    }
-
-    @Override
-    protected String defineUpdateQuery() {
-        return UPDATE_QUERY;
-    }
-
-    @Override
-    protected String defineDeleteQuery() {
-        return DELETE_QUERY;
-    }
-
-    protected PeriodicalEdition construct(ResultSet resultSet) throws SQLException {
-        PeriodicalEdition periodicalEdition = new PeriodicalEdition();
-        periodicalEdition.setId(resultSet.getLong(ID_COLUMN));
-        periodicalEdition.setPeriodicalEditionType(PeriodicalEditionType.valueOf(resultSet.getString(PERIODICAL_EDITION_TYPE_COLUMN)));
-        periodicalEdition.setPrice(resultSet.getInt(PRICE_COLUMN));
-        periodicalEdition.setPeriodicity(Periodicity.valueOf(resultSet.getString(PERIODICITY_COLUMN)));
-        periodicalEdition.setDescription(resultSet.getString(PERIODICAL_EDITION_DESCRIPTION_COLUMN));
-        periodicalEdition.setTitle(resultSet.getString(TITLE_COLUMN));
-        return periodicalEdition;
-    }
-
-    @Override
-    protected void settingPreparedParameter(PreparedStatement preparedStatement, PeriodicalEdition periodicalEdition) throws SQLException {
-        preparedStatement.setString(1, periodicalEdition.getPeriodicalEditionType().toString());
-        preparedStatement.setInt(2, periodicalEdition.getPrice());
-        preparedStatement.setString(3, periodicalEdition.getPeriodicity().toString());
-        preparedStatement.setString(4, periodicalEdition.getDescription());
-        preparedStatement.setString(5, periodicalEdition.getTitle());
-    }
-
-    @Override
-    protected void doDeletionOperations(Connection connection, Long id) throws SQLException {
-        deleteLinksFromReview(connection, id);
-        deleteLinksFromContent(connection, id);
-        deleteLinksFromImage(connection, id);
-        super.doDeletionOperations(connection, id);
-    }
-
-    private void deleteLinksFromReview(Connection connection, Long periodicalEditionId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_REVIEW_QUERY)) {
-            preparedStatement.setLong(1, periodicalEditionId);
-            preparedStatement.executeUpdate();
+    public PeriodicalEdition findById(Long id) throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            return session.get(PeriodicalEdition.class, id);
+        } catch (Exception ex) {
+            throw new RepositoryException("Periodical Edition not found: " + ex.getMessage());
         }
     }
 
-    private void deleteLinksFromImage(Connection connection, Long periodicalEditionId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_IMAGE_QUERY)) {
-            preparedStatement.setLong(1, periodicalEditionId);
-            preparedStatement.executeUpdate();
+    @Override
+    public List<PeriodicalEdition> findAll() throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery(SELECT_ALL_QUERY, PeriodicalEdition.class).list();
+        } catch (Exception ex) {
+            throw new RepositoryException("Periodical Editions not found: " + ex.getMessage());
         }
     }
 
-    private void deleteLinksFromContent(Connection connection, Long periodicalEditionId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_CONTENT_QUERY)) {
-            preparedStatement.setLong(1, periodicalEditionId);
-            preparedStatement.executeUpdate();
+    @Override
+    public boolean add(PeriodicalEdition periodicalEdition) throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            session.save(periodicalEdition);
+            return true;
+        } catch (Exception ex) {
+            throw new RepositoryException("Periodical Edition not adding: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public boolean update(PeriodicalEdition periodicalEdition) throws RepositoryException {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                Query query = session.createQuery(UPDATE_QUERY);
+                constructQuery(query, periodicalEdition);
+                query.executeUpdate();
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
+            }
+            return false;
+        }
+    }
+
+    private void constructQuery(Query query, PeriodicalEdition periodicalEdition) {
+        query.setParameter(PERIODICITY_COLUMN, periodicalEdition.getPeriodicity());
+        query.setParameter(ID_COLUMN, periodicalEdition.getId());
+        query.setParameter(TITLE_COLUMN, periodicalEdition.getTitle());
+        query.setParameter(DESCRIPTION_COLUMN, periodicalEdition.getDescription());
+        query.setParameter(PRICE_COLUMN, periodicalEdition.getPrice());
+        query.setParameter(PERIODICAL_EDITION_TYPE_COLUMN, periodicalEdition.getPeriodicalEditionType());
+    }
+
+    @Override
+    public boolean delete(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                PeriodicalEdition periodicalEdition = session.get(PeriodicalEdition.class, id);
+                deleteReviewLinks(session, periodicalEdition.getReviews());
+                deleteImageLinks(session, periodicalEdition.getImages());
+                deleteContentLinks(session, periodicalEdition.getContents());
+                session.delete(periodicalEdition);
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
+            }
+            return false;
+        }
+    }
+
+    private void deleteReviewLinks(Session session, List<Review> reviews){
+        for(Review review : reviews) {
+            session.delete(review);
+        }
+    }
+
+    private void deleteImageLinks(Session session, List<Image> images){
+        for (Image image : images) {
+            session.delete(image);
+        }
+    }
+
+    private void deleteContentLinks(Session session, List<Content> contents){
+        for (Content content : contents) {
+            session.delete(content);
         }
     }
 
     @Override
     public List<PeriodicalEdition> findPeriodicalEditionsBySubscriptionId(Long subscriptionId) {
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PERIODICAL_EDITION_BY_SUBSCRIPTION_ID)
-        ) {
-            preparedStatement.setLong(1, subscriptionId);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<PeriodicalEdition> periodicalEditions = new ArrayList<>();
-                while (resultSet.next()) {
-                    periodicalEditions.add(construct(resultSet));
-                }
-                return periodicalEditions;
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return null;
+//        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+//            Subscription subscription = session.get(Subscription.class, subscriptionId);
+//            if (subscription != null) {
+//                List<PeriodicalEdition> periodicalEditions = subscription.getP;
+//                Hibernate.initialize(periodicalEditions);
+//                return periodicalEditions;
+//            }
+            return new ArrayList<>();
     }
 }

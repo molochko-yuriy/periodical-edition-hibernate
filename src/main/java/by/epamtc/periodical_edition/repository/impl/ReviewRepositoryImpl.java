@@ -1,106 +1,108 @@
 package by.epamtc.periodical_edition.repository.impl;
 
 import by.epamtc.periodical_edition.entity.Review;
+import by.epamtc.periodical_edition.exception.RepositoryException;
+import by.epamtc.periodical_edition.repository.BaseRepository;
 import by.epamtc.periodical_edition.repository.ReviewRepository;
+import by.epamtc.periodical_edition.util.HibernateUtil;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
+import javax.persistence.Query;
 import java.util.List;
 
-public class ReviewRepositoryImpl extends AbstractRepositoryImpl<Review> implements ReviewRepository {
-    private static final String USER_COMMENT_COLUMN = "user_comment";
+public class ReviewRepositoryImpl implements ReviewRepository {
+    private static final String ID_COLUMN = "id";
     private static final String RATING_COLUMN = "rating";
-    private static final String USER_ID_COLUMN = "user_id";
-    private static final String PERIODICAL_EDITION_ID_COLUMN = "periodical_edition_id";
+    private static final String USER_COMMENT_COLUMN = "userComment";
 
-    private static final String SELECT_BY_ID_QUERY = "SELECT * FROM review WHERE id = ?";
-    private static final String SELECT_ALL_QUERY = "SELECT * FROM review";
-    private static final String INSERT_QUERY = "INSERT INTO review (user_comment, rating, user_id," +
-            "periodical_edition_id) VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE review SET user_comment = ?, rating = ?, " +
-            "user_id = ?, periodical_edition_id = ? WHERE id = %d";
-    private static final String DELETE_QUERY = "DELETE FROM review WHERE id = ?";
+    private static final String SELECT_ALL_QUERY = "from Review";
+    private static final String UPDATE_QUERY = ""
+            + " update Review set "
+            + " userComment = :userComment, rating = :rating where id = : id";
 
-    private static final String SELECT_REVIEW_BY_PERIODICAL_EDITION_ID = "SELECT * FROM review WHERE periodical_edition_id = ?";
-    private static final String SELECT_REVIEW_BY_USER_ID = "SELECT * FROM review WHERE user_id = ?";
+    private final SessionFactory sessionFactory;
 
-    public ReviewRepositoryImpl(DataSource dataSource) {
-        super(dataSource);
+    public ReviewRepositoryImpl() {
+        this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
     @Override
-    protected String defineSelectByIdQuery() {
-        return SELECT_BY_ID_QUERY;
+    public Review findById(Long id) throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            return session.get(Review.class, id);
+        } catch (Exception ex) {
+            throw new RepositoryException("Review not found: " + ex.getMessage());
+        }
     }
 
     @Override
-    protected String defineSelectAllQuery() {
-        return SELECT_ALL_QUERY;
+    public List<Review> findAll() throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery(SELECT_ALL_QUERY, Review.class).list();
+        } catch (Exception ex) {
+            throw new RepositoryException("Reviews not found: " + ex.getMessage());
+        }
     }
 
     @Override
-    protected String defineInsertQuery() {
-        return INSERT_QUERY;
+    public boolean add(Review review) throws RepositoryException {
+        try (Session session = sessionFactory.openSession()) {
+            session.save(review);
+            return true;
+        } catch (Exception ex) {
+            throw new RepositoryException("Review not adding: " + ex.getMessage());
+        }
     }
 
     @Override
-    protected String defineUpdateQuery() {
-        return UPDATE_QUERY;
+    public boolean update(Review review) throws RepositoryException {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                Query query = session.createQuery(UPDATE_QUERY);
+                constructQuery(query, review);
+                query.executeUpdate();
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
+            }
+            return false;
+        }
+    }
+
+    private void constructQuery(Query query, Review review) {
+        query.setParameter(RATING_COLUMN, review.getRating());
+        query.setParameter(ID_COLUMN, review.getId());
+        query.setParameter(USER_COMMENT_COLUMN, review.getUserComment());
     }
 
     @Override
-    protected String defineDeleteQuery() {
-        return DELETE_QUERY;
-    }
-
-    @Override
-    protected Review construct(ResultSet resultSet) throws SQLException {
-        Review review = new Review();
-        review.setId(resultSet.getLong(ID_COLUMN));
-        review.setUserComment(resultSet.getString(USER_COMMENT_COLUMN));
-        review.setRating(resultSet.getInt(RATING_COLUMN));
-        review.setUserId(resultSet.getLong(USER_ID_COLUMN));
-        review.setPeriodicalEditionId(resultSet.getLong(PERIODICAL_EDITION_ID_COLUMN));
-        return review;
-    }
-
-    @Override
-    protected void settingPreparedParameter(PreparedStatement preparedStatement, Review review) throws SQLException {
-        preparedStatement.setString(1, review.getUserComment());
-        preparedStatement.setInt(2, review.getRating());
-        preparedStatement.setLong(3, review.getUserId());
-        preparedStatement.setLong(4, review.getPeriodicalEditionId());
+    public boolean delete(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                Review review = session.get(Review.class, id);
+                session.delete(review);
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
+            }
+            return false;
+        }
     }
 
     @Override
     public List<Review> findReviewByPeriodicalEditionId(Long periodicalEditionId) {
-        return findReview(SELECT_REVIEW_BY_PERIODICAL_EDITION_ID, periodicalEditionId);
+        return null;
     }
 
     @Override
     public List<Review> findReviewByUserId(Long userId) {
-        return findReview(SELECT_REVIEW_BY_USER_ID, userId);
-    }
-
-    private List<Review> findReview(String query, Long id) {
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)
-        ) {
-            preparedStatement.setLong(1, id);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<Review> reviews = new ArrayList<>();
-                while (resultSet.next()) {
-                    reviews.add(construct(resultSet));
-                }
-                return reviews;
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return new ArrayList<>();
+        return null;
     }
 }

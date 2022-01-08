@@ -1,132 +1,127 @@
 package by.epamtc.periodical_edition.repository.impl;
 
+import by.epamtc.periodical_edition.entity.Review;
+import by.epamtc.periodical_edition.entity.Subscription;
 import by.epamtc.periodical_edition.entity.User;
+import by.epamtc.periodical_edition.exception.RepositoryException;
 import by.epamtc.periodical_edition.repository.BaseRepository;
+import by.epamtc.periodical_edition.repository.UserRepository;
+import by.epamtc.periodical_edition.util.HibernateUtil;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.Query;
+import java.util.List;
 
-public class UserRepositoryImpl extends AbstractRepositoryImpl<User> implements BaseRepository<User> {
-    private static final String LAST_NAME_COLUMN = "last_name";
-    private static final String FIRST_NAME_COLUMN = "first_name";
+public class UserRepositoryImpl implements UserRepository {
+    private static final String ID_COLUMN = "id";
+    private static final String LAST_NAME_COLUMN = "lastName";
+    private static final String FIRST_NAME_COLUMN = "firstName";
     private static final String LOGIN_COLUMN = "login";
     private static final String PASSWORD_COLUMN = "password";
+    private static final String MOBILE_PHONE_COLUMN = "mobilePhone";
     private static final String EMAIL_COLUMN = "email";
-    private static final String MOBILE_PHONE_COLUMN = "mobile_phone";
     private static final String BALANCE_COLUMN = "balance";
 
-    private static final String SELECT_BY_ID_QUERY = "SELECT * FROM users WHERE id = ?";
-    private static final String SELECT_ALL_QUERY = "SELECT * FROM users";
-    private static final String INSERT_QUERY = "INSERT INTO users (" +
-            "last_name, first_name, login, password, email, mobile_phone, balance) VALUES (?,?,?,?,?,?,?)";
-    private static final String UPDATE_QUERY = "UPDATE users SET last_name = ?, first_name = ?, login = ?, password = ?, " +
-            "email = ?,mobile_phone = ?, balance = ? WHERE id = %d";
-    private static final String DELETE_QUERY = "DELETE FROM users WHERE id = ?";
+    private static final String SELECT_ALL_QUERY = "from User";
 
-    private static final String DELETE_LINK_FROM_USER_ROLE_LINK_QUERY = "DELETE FROM user_role_link WHERE user_id = ?";
-    private static final String DELETE_LINK_FROM_REVIEW_QUERY = "DELETE FROM review WHERE user_id = ?";
-    private static final String DELETE_LINK_FROM_SUBSCRIPTION_QUERY = "DELETE FROM subscription WHERE user_id = ?";//3
-    private static final String SELECT_FROM_SUBSCRIPTION_BY_USER_ID = "SELECT * FROM subscription WHERE user_id = ?";//1 list
-    private static final String DELETE_LINK_FROM_CONTENT_QUERY = "DELETE FROM content WHERE subscription_id = ?"; //2
+    private static final String UPDATE_QUERY = ""
+            + " update User set "
+            + " lastName = :lastName, firstName = :firstName, login = :login, "
+            + " password = :password, mobilePhone = :mobilePhone, "
+            + " email = :email, balance = :balance where id = :id ";
 
-    public UserRepositoryImpl(DataSource dataSource) {
-        super(dataSource);
+    private final SessionFactory sessionFactory;
+
+    public UserRepositoryImpl() {
+        this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
     @Override
-    protected String defineSelectByIdQuery() {
-        return SELECT_BY_ID_QUERY;
-    }
-
-    @Override
-    protected String defineSelectAllQuery() {
-        return SELECT_ALL_QUERY;
-    }
-
-    @Override
-    protected String defineInsertQuery() {
-        return INSERT_QUERY;
-    }
-
-    @Override
-    protected String defineUpdateQuery() {
-        return UPDATE_QUERY;
-    }
-
-    @Override
-    protected String defineDeleteQuery() {
-        return DELETE_QUERY;
-    }
-
-    @Override
-    protected User construct(ResultSet resultSet) throws SQLException {
-        User user = new User();
-        user.setId(resultSet.getLong(ID_COLUMN));
-        user.setLastName(resultSet.getString(LAST_NAME_COLUMN));
-        user.setFirstName(resultSet.getString(FIRST_NAME_COLUMN));
-        user.setLogin(resultSet.getString(LOGIN_COLUMN));
-        user.setPassword(resultSet.getString(PASSWORD_COLUMN));
-        user.setEmail(resultSet.getString(EMAIL_COLUMN));
-        user.setMobilePhone(resultSet.getString(MOBILE_PHONE_COLUMN));
-        user.setBalance(resultSet.getInt(BALANCE_COLUMN));
-        return user;
-    }
-
-    @Override
-    protected void settingPreparedParameter(PreparedStatement preparedStatement, User user) throws SQLException {
-        preparedStatement.setString(1, user.getLastName());
-        preparedStatement.setString(2, user.getFirstName());
-        preparedStatement.setString(3, user.getLogin());
-        preparedStatement.setString(4, user.getPassword());
-        preparedStatement.setString(5, user.getEmail());
-        preparedStatement.setString(6, user.getMobilePhone());
-        preparedStatement.setInt(7, user.getBalance());
-    }
-
-    @Override
-    protected void doDeletionOperations(Connection connection, Long id) throws SQLException {
-        deleteLinksFromUserRoleLink(connection, id);
-        deleteLinksFromReview(connection, id);
-        deleteLinksFromSubscription(connection, id);
-        super.doDeletionOperations(connection, id);
-    }
-
-    private void deleteLinksFromUserRoleLink(Connection connection, Long userId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_USER_ROLE_LINK_QUERY)) {
-            preparedStatement.setLong(1, userId);
-            preparedStatement.executeUpdate();
+    public User findById(Long id) throws RepositoryException {
+        try(Session session = sessionFactory.openSession()) {
+            return session.get(User.class, id);
+        } catch (Exception ex) {
+            throw new RepositoryException("User not found: " + ex.getMessage());
         }
     }
 
-    private void deleteLinksFromReview(Connection connection, Long userId) throws SQLException {
-        try(PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_REVIEW_QUERY)) {
-            preparedStatement.setLong(1, userId);
-            preparedStatement.executeUpdate();
+    @Override
+    public List<User> findAll() throws RepositoryException {
+        try(Session session = sessionFactory.openSession()) {
+            return session.createQuery(SELECT_ALL_QUERY, User.class).list();
+        } catch (Exception ex) {
+            throw new RepositoryException("Users not found: " + ex.getMessage());
         }
     }
 
-    private void deleteLinksFromSubscription(Connection connection, Long userId) throws SQLException {
-        deleteLinksFromContent(connection, userId);
-        try(PreparedStatement preparedStatement = connection.prepareStatement(DELETE_LINK_FROM_SUBSCRIPTION_QUERY)) {
-            preparedStatement.setLong(1, userId);
-            preparedStatement.executeUpdate();
+    @Override
+    public boolean add(User user) throws RepositoryException {
+        try(Session session = sessionFactory.openSession()) {
+            session.save(user);
+            return true;
+        } catch (Exception ex) {
+            throw new RepositoryException("User not adding: " + ex.getMessage());
         }
     }
 
-    private void deleteLinksFromContent(Connection connection, Long userId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_FROM_SUBSCRIPTION_BY_USER_ID)) {
-            preparedStatement.setLong(1, userId);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    try (PreparedStatement preparedStatementToDelete = connection.prepareStatement(DELETE_LINK_FROM_CONTENT_QUERY)) {
-                        preparedStatementToDelete.setLong(1, resultSet.getLong(ID_COLUMN));
-                        preparedStatementToDelete.executeUpdate();
-                    }
-                }
+    @Override
+    public boolean update(User user) throws RepositoryException {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                Query query = session.createQuery(UPDATE_QUERY);
+                constructQuery(query, user);
+                query.executeUpdate();
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
             }
+            return false;
+        }
+    }
+
+    protected void constructQuery(Query query, User user) {
+        query.setParameter(LAST_NAME_COLUMN, user.getLastName());
+        query.setParameter(FIRST_NAME_COLUMN, user.getFirstName());
+        query.setParameter(LOGIN_COLUMN, user.getLogin());
+        query.setParameter(PASSWORD_COLUMN, user.getPassword());
+        query.setParameter(EMAIL_COLUMN, user.getEmail());
+        query.setParameter(BALANCE_COLUMN, user.getBalance());
+        query.setParameter(MOBILE_PHONE_COLUMN, user.getMobilePhone());
+        query.setParameter(ID_COLUMN, user.getId());
+    }
+
+    @Override
+    public boolean delete(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.getTransaction().begin();
+            try {
+                User user = session.get(User.class, id);
+                deleteSubscriptionLinks(session, user.getSubscriptions());
+                deleteReviewLinks(session, user.getReviews());
+                session.delete(user);
+                session.getTransaction().commit();
+                return true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                session.getTransaction().rollback();
+            }
+            return false;
+        }
+    }
+
+    private void deleteReviewLinks(Session session, List<Review> reviews){
+        for(Review review : reviews) {
+            session.delete(review);
+        }
+    }
+
+    private void deleteSubscriptionLinks(Session session, List<Subscription> subscriptions){
+        for(Subscription subscription : subscriptions) {
+            session.delete(subscription);
         }
     }
 }
